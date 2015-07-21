@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">JSON-Parser</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="get_http_header_button">Get Headers</string>
+    <string name="get_date_button">Get Date and Time</string>
+    <string name="convert_to_md5">Convert String to MD5</string>
+    <string name="json_value_label">View Info</string>
+</resources>
