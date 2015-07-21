@@ -1,31 +1,30 @@
 package com.tinyowl.rohan.json_parser;
 
 import android.os.AsyncTask;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.Buffer;
 import java.util.Iterator;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+
+import static android.widget.Toast.LENGTH_SHORT;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -35,6 +34,9 @@ public class MainActivity extends ActionBarActivity {
     EditText stringOriginal;
     @Bind(R.id.json_value)
     TextView jsonLabel;
+    @Bind(R.id.download_progress)
+    ProgressBar mDownloadProgress;
+
     private String mJsonString;
 
     @Override
@@ -71,6 +73,9 @@ public class MainActivity extends ActionBarActivity {
     @OnClick({R.id.get_md5, R.id.get_date, R.id.get_http_header})
     public void onClick(View view) {
 
+
+        //Enables the web url to fetch the JSON from
+
         String json = "";
         URL url;
         ParseJsonTask parseJsonTask = new ParseJsonTask();
@@ -85,7 +90,7 @@ public class MainActivity extends ActionBarActivity {
 
                 case R.id.get_md5:
                     //url = new URL("http://md5.jsontest.com/?text=" + stringOriginal.getText().toString());
-                    parseJsonTask.execute("http://md5.jsontest.com/?text=" + stringOriginal.getText().toString());
+                    parseJsonTask.execute("http://md5.jsontest.com/?text=" + (stringOriginal.getText().toString()).replaceAll("\\W+", ""));
                     break;
 
                 case R.id.get_date:
@@ -109,6 +114,10 @@ public class MainActivity extends ActionBarActivity {
         //parseJson(json);
 
     }
+
+    /*
+    Parsing JSON into the individual components using String Iterator
+     */
 
     public void parseJson(String json) {
 
@@ -134,7 +143,7 @@ public class MainActivity extends ActionBarActivity {
         jsonLabel.setText(json_label_value);
     }
 
-    private class ParseJsonTask extends AsyncTask<String, Void, String> {
+    private class ParseJsonTask extends AsyncTask<String, Integer, String> {
 
         @Override
         protected void onPostExecute(String json) {
@@ -163,6 +172,12 @@ public class MainActivity extends ActionBarActivity {
         }
 
         @Override
+        protected void onCancelled(String s) {
+            Toast.makeText(getApplicationContext(), s, LENGTH_SHORT).show();
+            super.onCancelled();
+        }
+
+        @Override
         protected String doInBackground(String... params) {
 
             String json = "";
@@ -172,14 +187,27 @@ public class MainActivity extends ActionBarActivity {
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     BufferedReader br = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
                     String s = "";
-                    while((s = br.readLine()) != null)
+                    while((s = br.readLine()) != null) {
                         json = json + s;
+                    }
+
+                    synchronized (this) {
+                        for (int i = 0; i < 101; i+=4) {
+                            wait(4);
+                            publishProgress(i);
+                        }
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
             return json;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            mDownloadProgress.setProgress(values[0]);
         }
     }
 
